@@ -1,19 +1,28 @@
 #include "Arduino.h"
 #include "SoftwareSerial.h"
 #include "DFRobotDFPlayerMini.h"
+#include <LiquidCrystal.h>
 
 SoftwareSerial mySoftwareSerial(10, 11); // RX, TX
 DFRobotDFPlayerMini myDFPlayer;
 void printDetail(uint8_t type, int value);
 
-const int buttonPin = 2;  // the number of the pushbutton pin
+const int buttonPin = 6;  // the number of the pushbutton pin
 int lastButtonState;    // the previous state of button
 int currentButtonState; // the current state of button
+
+const int rs = 13, en = 12, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
 
 void setup()
 {
   mySoftwareSerial.begin(9600);
   Serial.begin(115200);
+
+  lcd.begin(16, 2);
+
+  lcd.print("hello, world!");
 
   pinMode(buttonPin, INPUT);
 
@@ -29,10 +38,10 @@ void setup()
   }
   Serial.println(F("DFPlayer Mini online, testing first file."));
   
-  myDFPlayer.volume(30);  //Set volume value. From 0 to 30
+  myDFPlayer.volume(10);  //Set volume value. From 0 to 30
   myDFPlayer.play(1);  //Play the first mp3
 
-  currentButtonState = digitalRead(buttonPin);
+  currentButtonState = LOW;
 }
 
 void loop()
@@ -42,16 +51,31 @@ void loop()
   currentButtonState = digitalRead(buttonPin); // read new state
 
   if(lastButtonState == HIGH && currentButtonState == LOW) {
+
+    lcd.clear();
+
     Serial.println("Next sound");
 
     // switch to next file
     myDFPlayer.next();
-    Serial.println(myDFPlayer.readCurrentFileNumber());
+
+    if (myDFPlayer.read() == 1) {
+      lcd.print("please follow!");
+    }
+
+    if (myDFPlayer.read() == 2) {
+      lcd.print("glitch");
+    }
+
+    if (myDFPlayer.read() == 3){
+      lcd.print("hi!");
+    }
   }
 
   if (myDFPlayer.available()) {
     printDetail(myDFPlayer.readType(), myDFPlayer.read()); //Print the detail message from DFPlayer to handle different errors and states.
   }
+  delay(50);
 }
 
 void printDetail(uint8_t type, int value){
